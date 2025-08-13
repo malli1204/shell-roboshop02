@@ -1,22 +1,17 @@
 #!/bin/bash
 
-
+app_name=mongod
 source ./common,sh
+
+check_root
+
 cp mongo.repo /etc/yum.repos.d/mongo.repo 
 VALIDATE $? "copying repo file"
 
 dnf install mongodb-org -y 
 VALIDATE $? "installing mongodb"
 
-systemctl enable mongod 
-systemctl start mongod 
-VALIDATE $? "starting mongodb services.."
 
-sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mongod.conf
-VALIDATE $? "allowing all services.."
-
-systemctl restart mongod
-VALIDATE $? "restarting the services.."
 
 
 
