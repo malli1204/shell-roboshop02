@@ -1,6 +1,6 @@
 #!/bin/bash
-START_TIME=$(date +%s)
 
+START_TIME=$(date +%s)
 USERID=$(id -u)
 R="\e[31m"
 G="\e[32m"
@@ -35,46 +35,47 @@ VALIDATE(){
 }
 
 dnf module disable nodejs -y &>>$LOG_FILE
-VALIDATE $? "module disable"
+VALIDATE $? "Disabling default nodejs"
 
 dnf module enable nodejs:20 -y &>>$LOG_FILE
-VALIDATE $? "module enable"
+VALIDATE $? "Enabling nodejs:20"
 
 dnf install nodejs -y &>>$LOG_FILE
-VALIDATE $? "installing nodejs"
+VALIDATE $? "Installing nodejs:20"
 
 id roboshop
 if [ $? -ne 0 ]
 then
     useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_FILE
-    VALIDATE $? "creating user"
-else 
-    echo -e "system user already created $Y SKIPPING $N"
+    VALIDATE $? "Creating roboshop system user"
+else
+    echo -e "System user roboshop already created ... $Y SKIPPING $N"
 fi
-mkdir -p /app 
-VALIDATE $? "creating app dir"
 
-curl -o /tmp/cart.zip https://roboshop-artifacts.s3.amazonaws.com/cart-v3.zip 
-VALIDATE $? "downloading cart"
+mkdir -p /app 
+VALIDATE $? "Creating app directory"
+
+curl -o /tmp/cart.zip https://roboshop-artifacts.s3.amazonaws.com/cart-v3.zip &>>$LOG_FILE
+VALIDATE $? "Downloading cart"
 
 rm -rf /app/*
 cd /app 
 unzip /tmp/cart.zip &>>$LOG_FILE
 VALIDATE $? "unzipping cart"
 
-npm install &>>$LOG_FILE 
-VALIDATE $? "installing dependencies" &>>$LOG_FILE
+npm install &>>$LOG_FILE
+VALIDATE $? "Installing Dependencies"
 
 cp $SCRIPT_DIR/cart.service /etc/systemd/system/cart.service
-VALIDATE $? "creating services"
+VALIDATE $? "Copying cart service"
 
-systemctl daemon-reload &>>$LOG_FILE 
-systemctl enable cart &>>$LOG_FILE
-systemctl start cart &>>$LOG_FILE
-VALIDATE $? "starting the cart"
+systemctl daemon-reload &>>$LOG_FILE
+systemctl enable cart  &>>$LOG_FILE
+systemctl start cart
+VALIDATE $? "Starting cart"
 
 END_TIME=$(date +%s)
+TOTAL_TIME=$(( $END_TIME - $START_TIME ))
 
-TOTAL_TIME=$(($END_TIME - $START_TIME))
+echo -e "Script exection completed successfully, $Y time taken: $TOTAL_TIME seconds $N" | tee -a $LOG_FILE
 
-echo -e "execution time , $Y time taken: $TOTAL_TIME"

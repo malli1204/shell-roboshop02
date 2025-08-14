@@ -1,4 +1,5 @@
 #!/bin/bash
+
 START_TIME=$(date +%s)
 USERID=$(id -u)
 R="\e[31m"
@@ -34,47 +35,47 @@ VALIDATE(){
 }
 
 dnf module disable nodejs -y &>>$LOG_FILE
-VALIDATE $? "module disable"
+VALIDATE $? "Disabling default nodejs"
 
 dnf module enable nodejs:20 -y &>>$LOG_FILE
-VALIDATE $? "module enable"
+VALIDATE $? "Enabling nodejs:20"
 
 dnf install nodejs -y &>>$LOG_FILE
-VALIDATE $? "installing nodejs"
+VALIDATE $? "Installing nodejs:20"
 
 id roboshop
 if [ $? -ne 0 ]
 then
     useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_FILE
-    VALIDATE $? "creating user"
-else 
-    echo -e "system user already created $Y SKIPPING $N"
+    VALIDATE $? "Creating roboshop system user"
+else
+    echo -e "System user roboshop already created ... $Y SKIPPING $N"
 fi
-mkdir -p /app 
-VALIDATE $? "creating app dir"
 
-curl -o /tmp/user.zip https://roboshop-artifacts.s3.amazonaws.com/user-v3.zip 
-VALIDATE $? "downloading user"
+mkdir -p /app 
+VALIDATE $? "Creating app directory"
+
+curl -o /tmp/user.zip https://roboshop-artifacts.s3.amazonaws.com/user-v3.zip &>>$LOG_FILE
+VALIDATE $? "Downloading user"
 
 rm -rf /app/*
 cd /app 
 unzip /tmp/user.zip &>>$LOG_FILE
 VALIDATE $? "unzipping user"
 
-npm install &>>$LOG_FILE 
-VALIDATE $? "installing dependencies" &>>$LOG_FILE
+npm install &>>$LOG_FILE
+VALIDATE $? "Installing Dependencies"
 
-cp $SCRIPT_DIR/user.services /etc/systemd/system/user.service
-VALIDATE $? "creating services"
+cp $SCRIPT_DIR/user.service /etc/systemd/system/user.service
+VALIDATE $? "Copying user service"
 
-systemctl daemon-reload &>>$LOG_FILE 
-systemctl enable user &>>$LOG_FILE
-systemctl start user &>>$LOG_FILE
-VALIDATE $? "starting the user"
-
+systemctl daemon-reload &>>$LOG_FILE
+systemctl enable user  &>>$LOG_FILE
+systemctl start user
+VALIDATE $? "Starting user"
 
 END_TIME=$(date +%s)
+TOTAL_TIME=$(( $END_TIME - $START_TIME ))
 
-TOTAL_TIME=$(($END_TIME - $START_TIME))
+echo -e "Script exection completed successfully, $Y time taken: $TOTAL_TIME seconds $N" | tee -a $LOG_FILE
 
-echo -e "execution time , $Y time taken: $TOTAL_TIME"

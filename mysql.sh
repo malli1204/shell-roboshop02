@@ -1,4 +1,5 @@
 #!/bin/bash
+
 START_TIME=$(date +%s)
 USERID=$(id -u)
 R="\e[31m"
@@ -22,7 +23,7 @@ else
     echo "You are running with root access" | tee -a $LOG_FILE
 fi
 
-echo "please enter root password"
+echo "Please enter root password to setup"
 read -s MYSQL_ROOT_PASSWORD
 
 # validate functions takes input as exit status, what command they tried to install
@@ -37,26 +38,18 @@ VALIDATE(){
 }
 
 dnf install mysql-server -y &>>$LOG_FILE
-VALIDATE $? "installing mysql"
+VALIDATE $? "Installing MySQL server"
 
 systemctl enable mysqld &>>$LOG_FILE
-systemctl start mysqld  &>>$LOG_FILE
-VALIDATE $? "starting mysql"
+VALIDATE $? "Enabling MySQL"
 
+systemctl start mysqld   &>>$LOG_FILE
+VALIDATE $? "Starting MySQL"
 
 mysql_secure_installation --set-root-pass $MYSQL_ROOT_PASSWORD &>>$LOG_FILE
-VALIDATE $? "setting mysql root pwd"
-
-
-
-
-
-
-
-
+VALIDATE $? "Setting MySQL root password"
 
 END_TIME=$(date +%s)
+TOTAL_TIME=$(( $END_TIME - $START_TIME ))
 
-TOTAL_TIME=$(($END_TIME - $START_TIME))
-
-echo -e "execution time , $Y time taken: $TOTAL_TIME"
+echo -e "Script exection completed successfully, $Y time taken: $TOTAL_TIME seconds $N" | tee -a $LOG_FILE
